@@ -12,7 +12,45 @@ Kommandozeilen-Tool, das WLAN-Netzwerke in der Umgebung scannt und auswertet:
 
 Keine externen Abhängigkeiten – nur Python ≥ 3.9.
 
-## Unterstützte Systeme
+## Android-App
+
+Im Ordner [`android/`](android) liegt eine native Android-App (Kotlin + Jetpack Compose) mit
+derselben Analyse:
+
+- **Netzwerke** – Liste aller Access Points mit Signal, Kanal, Breite und Verschlüsselung (Filter nach Band)
+- **Kanäle** – Kanaldiagramm (2.4 / 5 / 6 GHz) und Interferenz-Score je Kanal mit Empfehlung
+- **Analyse** – Übersicht, Bewertung der eigenen Verbindung, Sicherheitswarnungen
+- Automatischer Scan alle 30 s und Demo-Modus ohne Berechtigungen
+
+### APK herunterladen
+
+Die APK wird bei jedem Push automatisch von GitHub Actions gebaut:
+
+1. Im Repository auf **Actions → Android-APK** gehen und den neuesten erfolgreichen Lauf öffnen.
+2. Unten bei **Artifacts** `WLAN-Analyzer-apk` herunterladen (ZIP mit `WLAN-Analyzer.apk`).
+3. APK aufs Handy kopieren, öffnen und die Installation aus „unbekannten Quellen“ erlauben.
+
+Wird ein Tag `v*` (z. B. `v0.1.0`) gepusht, landet die APK zusätzlich unter **Releases**.
+
+Hinweise zu Android:
+
+- Die App braucht die **Standortberechtigung** und einen eingeschalteten **Standortdienst** –
+  sonst liefert Android keine Scan-Ergebnisse. Es werden keine Daten gespeichert oder versendet.
+- Android erlaubt nur **4 Scans in 2 Minuten**; bei Drosselung zeigt die App die zuletzt
+  bekannten Ergebnisse an.
+- Die APK ist mit einem Debug-Schlüssel signiert (für die direkte Installation gedacht).
+
+### Selbst bauen
+
+```bash
+cd android
+./gradlew :app:assembleRelease      # benötigt Android SDK (ANDROID_HOME oder local.properties)
+./gradlew :core:test                # Analyse-Logik testen – funktioniert auch ohne Android SDK
+```
+
+Oder den Ordner `android/` in Android Studio öffnen.
+
+## Unterstützte Systeme (Python-Tool)
 
 | System  | Werkzeug                                    |
 |---------|---------------------------------------------|
@@ -23,7 +61,7 @@ Keine externen Abhängigkeiten – nur Python ≥ 3.9.
 > Hinweis: `iw scan` benötigt unter Linux root-Rechte. Unter Windows 11 / macOS Sonoma+ muss
 > ggf. der Standortzugriff für das Terminal erlaubt sein, sonst werden SSIDs/BSSIDs ausgeblendet.
 
-## Installation
+## Installation (Python-Tool)
 
 ```bash
 pip install .
