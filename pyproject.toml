@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wifi-analyzer"
+version = "0.1.0"
+description = "WLAN-Netzwerke scannen und Kanalauslastung, Signal und Sicherheit analysieren"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+wifi-analyzer = "wifi_analyzer.cli:main"
+
+[tool.setuptools]
+packages = ["wifi_analyzer"]
