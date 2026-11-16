@@ -30,7 +30,7 @@ Die APK wird bei jedem Push automatisch von GitHub Actions gebaut:
 2. Unten bei **Artifacts** `WLAN-Analyzer-apk` herunterladen (ZIP mit `WLAN-Analyzer.apk`).
 3. APK aufs Handy kopieren, öffnen und die Installation aus „unbekannten Quellen“ erlauben.
 
-Wird ein Tag `v*` (z. B. `v0.1.0`) gepusht, landet die APK zusätzlich unter **Releases**.
+Fertige Versionen liegen unter **Releases**. Ein neues Release entsteht über **Actions → Android-APK → Run workflow** mit „release“ (Version aus `versionName` in `android/app/build.gradle.kts`) oder durch Pushen eines Tags `v*`.
 
 Hinweise zu Android:
 
