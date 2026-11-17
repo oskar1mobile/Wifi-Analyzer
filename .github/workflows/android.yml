@@ -1,0 +1,64 @@
+name: Android-APK
+
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "GitHub-Release mit der APK erstellen (Version aus app/build.gradle.kts)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Tests und APK bauen
+        run: ./gradlew --no-daemon :core:test :app:assembleRelease
+
+      - name: APK umbenennen
+        run: cp app/build/outputs/apk/release/app-release.apk WLAN-Analyzer.apk
+
+      - name: APK als Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: WLAN-Analyzer-apk
+          path: android/WLAN-Analyzer.apk
+
+      - name: Version ermitteln
+        id: version
+        run: echo "name=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)" >> "$GITHUB_OUTPUT"
+
+      - name: GitHub-Release erstellen (Tag v* oder manuell mit release=true)
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('v{0}', steps.version.outputs.name) }}
+          name: WLAN-Analyzer ${{ steps.version.outputs.name }}
+          target_commitish: ${{ github.sha }}
+          files: android/WLAN-Analyzer.apk
+          body: |
+            Android-App zur WLAN-Analyse.
+
+            **Installation:** `WLAN-Analyzer.apk` aufs Handy laden, öffnen und die Installation aus unbekannten Quellen erlauben.
+            Beim ersten Start die Standortberechtigung erteilen – Android liefert WLAN-Scans nur mit Standortzugriff.
+
+            - Netzwerkliste mit Signal, Kanal, Breite und Verschlüsselung
+            - Kanaldiagramm 2.4 / 5 / 6 GHz mit Interferenz-Score und Kanalempfehlung
+            - Analyse der eigenen Verbindung und Sicherheitswarnungen
+            - Auto-Scan (30 s) und Demo-Modus

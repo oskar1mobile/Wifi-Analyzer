@@ -59,11 +59,51 @@ Unter [Releases](https://github.com/oskar1mobile/Wifi-Analyzer/releases) den gew
 
 ## Projektstand
 
-- Dokumentierter Release: [WLAN-Analyzer 0.1.0](https://github.com/oskar1mobile/Wifi-Analyzer/releases/tag/v0.1.0).
-- Veröffentlichung: 16. November 2026.
-- Die Funktionsliste basiert auf der Release-Beschreibung und ist keine unabhängige Prüfung der APK.
-- Zum Zeitpunkt dieser Dokumentation lag auf `main` nur die README; eine Anleitung zum Selbstbauen wird daher hier noch nicht angegeben.
-- Aussagen zu Telemetrie, Datenspeicherung oder Netzwerkübertragungen werden ohne Prüfung des passenden Quellcodes nicht zugesichert.
+- Aktueller Release: [WLAN-Analyzer 0.1.0](https://github.com/oskar1mobile/Wifi-Analyzer/releases/tag/v0.1.0), veröffentlicht am 16. November 2026.
+- Der Quellcode der App liegt im Ordner [`android/`](android) (Kotlin, Jetpack Compose, ab Android 8.0).
+- Die App fordert **keine Internet-Berechtigung** an (siehe `android/app/src/main/AndroidManifest.xml`) und kann daher keine Messdaten übertragen. Scan-Ergebnisse werden nur im Arbeitsspeicher gehalten und nicht gespeichert.
+- Die Analyse-Logik ist mit Unit-Tests abgedeckt; die App selbst wird bei jedem Push von GitHub Actions gebaut. Ein Test auf echten Geräten steht noch aus.
+
+## Wie die Kanalbewertung funktioniert
+
+Für jeden Kanal wird geprüft, welche gefundenen Netze seinen Frequenzbereich überlappen – inklusive gebündelter 40/80/160-MHz-Kanäle. Jedes Netz trägt mit einem Gewicht von 0 (−90 dBm) bis 1 (−30 dBm) bei. Netze auf **demselben** Kanal teilen sich das Medium (Faktor 1,0); **teilweise** überlappende Netze erzeugen echtes Rauschen und zählen stärker (Faktor 1,5 × Überlappungsanteil). Das eigene, verbundene Netz wird nicht mitgezählt. Im 2,4-GHz-Band werden nur die überlappungsfreien Kanäle 1, 6 und 11 empfohlen; im 5-GHz-Band werden Nicht-DFS-Kanäle leicht bevorzugt.
+
+| Score | Bewertung |
+|-------|-----------|
+| < 0,5 | frei      |
+| < 1,5 | gering    |
+| < 3,0 | mittel    |
+| ≥ 3,0 | hoch      |
+
+## Selbst bauen
+
+```bash
+cd android
+./gradlew :app:assembleRelease   # benötigt Android SDK (ANDROID_HOME oder local.properties)
+./gradlew :core:test             # Analyse-Logik testen – funktioniert auch ohne Android SDK
+```
+
+Alternativ den Ordner `android/` in Android Studio öffnen. Die so gebaute Release-APK ist mit dem Debug-Schlüssel signiert und für die direkte Installation gedacht.
+
+### Neues Release erstellen
+
+1. `versionName` (und `versionCode`) in `android/app/build.gradle.kts` erhöhen und `CHANGELOG.md` ergänzen.
+2. Auf GitHub **Actions → Android-APK → Run workflow** öffnen, Haken bei **release** setzen und starten.
+3. Der Workflow baut die APK und legt Tag `v<versionName>` samt Release an. Alternativ entsteht ein Release auch durch Pushen eines Tags `v*`.
+
+## Python-Kommandozeilenwerkzeug
+
+Zusätzlich enthält das Repository unter [`wifi_analyzer/`](wifi_analyzer) ein Kommandozeilenwerkzeug für Linux (`nmcli`/`iw`), Windows (`netsh`) und macOS (`system_profiler`) mit derselben Analyse. Es benötigt nur Python ≥ 3.9.
+
+```bash
+python -m wifi_analyzer                       # scannen und im Terminal auswerten
+python -m wifi_analyzer --html bericht.html   # zusätzlich HTML-Report mit Kanaldiagramm
+python -m wifi_analyzer --json -              # nur JSON auf stdout
+python -m wifi_analyzer --band 5 --watch 10   # nur 5 GHz, alle 10 s neu scannen
+python -m wifi_analyzer --demo                # Beispieldaten ohne WLAN-Hardware
+```
+
+Unter Linux benötigt `iw scan` root-Rechte; unter Windows 11 und aktuellem macOS muss das Terminal ggf. Standortzugriff haben, sonst werden Netzwerknamen ausgeblendet. Tests: `pip install pytest && python -m pytest`.
 
 ## Fehler melden
 
