@@ -6,3 +6,6 @@ dist/
 .pytest_cache/
 *.html
 *.json
+*.keystore
+*.jks
+*.p12

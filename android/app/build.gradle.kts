@@ -6,6 +6,27 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Release-Signing: Keystore und Passwort kommen ausschließlich aus Umgebungsvariablen,
+// damit nie ein Geheimnis im Repository landet.
+//   KS_FILE  – Pfad zur Keystore-Datei (Standard: android/release.keystore)
+//   KS_PASS  – Keystore-Passwort (bei PKCS12 zugleich das Schlüssel-Passwort)
+//   KS_ALIAS – Schlüssel-Alias (Standard: wlan-analyzer)
+// Mit -PrequireReleaseSigning=true bricht der Build ab, statt auf den Debug-Schlüssel auszuweichen.
+val releaseKeystore: File = System.getenv("KS_FILE")?.takeIf { it.isNotBlank() }?.let { file(it) }
+    ?: rootProject.file("release.keystore")
+val releaseKsPass: String? = System.getenv("KS_PASS")?.takeIf { it.isNotEmpty() }
+val hasReleaseSigning = releaseKsPass != null && releaseKeystore.isFile
+val requireReleaseSigning = providers.gradleProperty("requireReleaseSigning").orNull == "true"
+
+if (!hasReleaseSigning) {
+    val reason = when {
+        releaseKsPass == null -> "KS_PASS ist nicht gesetzt"
+        else -> "Keystore nicht gefunden: $releaseKeystore"
+    }
+    if (requireReleaseSigning) throw GradleException("Release-Signing nicht möglich – $reason.")
+    logger.warn("WARNUNG: $reason – die Release-APK wird mit dem Debug-Schlüssel signiert.")
+}
+
 android {
     namespace = "app.wifianalyzer"
     compileSdk = 35
@@ -18,14 +39,27 @@ android {
         versionName = "0.1.0"
     }
 
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = releaseKeystore
+                storePassword = releaseKsPass
+                keyAlias = System.getenv("KS_ALIAS")?.takeIf { it.isNotBlank() } ?: "wlan-analyzer"
+                keyPassword = releaseKsPass
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-            // Für die direkte Installation (Sideloading) mit dem Debug-Schlüssel signieren.
-            // Für eine Veröffentlichung im Play Store einen eigenen Release-Schlüssel verwenden.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 
