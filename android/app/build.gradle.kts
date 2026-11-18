@@ -27,6 +27,15 @@ if (!hasReleaseSigning) {
     logger.warn("WARNUNG: $reason – die Release-APK wird mit dem Debug-Schlüssel signiert.")
 }
 
+// Kurzer Git-Commit für die Versionsinfo in der App: in GitHub Actions aus GITHUB_SHA,
+// lokal per `git rev-parse`, sonst "unbekannt".
+val gitCommit: String = System.getenv("GITHUB_SHA")?.takeIf { it.isNotBlank() }?.take(7)
+    ?: runCatching {
+        providers.exec { commandLine("git", "rev-parse", "--short=7", "HEAD") }
+            .standardOutput.asText.get().trim()
+    }.getOrNull()?.takeIf { it.isNotEmpty() }
+    ?: "unbekannt"
+
 android {
     namespace = "app.wifianalyzer"
     compileSdk = 35
@@ -37,6 +46,9 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+
+        buildConfigField("String", "GIT_COMMIT", "\"$gitCommit\"")
+        buildConfigField("boolean", "RELEASE_SIGNED", "false")
     }
 
     signingConfigs {
@@ -60,6 +72,7 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            buildConfigField("boolean", "RELEASE_SIGNED", hasReleaseSigning.toString())
         }
     }
 
@@ -68,7 +81,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
 
 kotlin {

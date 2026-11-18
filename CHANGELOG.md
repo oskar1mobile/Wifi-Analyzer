@@ -1,5 +1,10 @@
 # Versionsübersicht
 
+## Unveröffentlicht
+
+- Neuer Dialog „Über die App“ im Menü: Version, Build-Typ, Git-Commit, Signatur sowie Android-Version und Gerät; per „Kopieren“ für Fehlermeldungen in die Zwischenablage.
+- Release-Signing mit eigenem Keystore (Umgebungsvariablen `KS_PASS`/`KS_FILE`, GitHub-Secrets `KS_PASS`/`KEYSTORE_BASE64`).
+
 ## 0.1.0 – 16. November 2026
 
 Veröffentlichung als `WLAN-Analyzer.apk` unter dem Tag `v0.1.0`.

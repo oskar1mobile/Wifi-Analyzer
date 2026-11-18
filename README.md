@@ -149,7 +149,7 @@ Unter Linux benötigt `iw scan` root-Rechte; unter Windows 11 und aktuellem macO
 
 ## Fehler melden
 
-[Ein Issue erstellen](https://github.com/oskar1mobile/Wifi-Analyzer/issues) und möglichst folgende Angaben ergänzen:
+[Ein Issue erstellen](https://github.com/oskar1mobile/Wifi-Analyzer/issues) und möglichst folgende Angaben ergänzen. Version, Commit, Android-Version und Gerät lassen sich in der App über **⋮ → Über die App → Kopieren** in die Zwischenablage übernehmen:
 
 - App-Version, Gerätemodell und Android-Version.
 - Schritte zum Reproduzieren.
