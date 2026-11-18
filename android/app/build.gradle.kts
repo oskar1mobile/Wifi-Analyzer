@@ -44,8 +44,8 @@ android {
         applicationId = "app.wifianalyzer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
 
         buildConfigField("String", "GIT_COMMIT", "\"$gitCommit\"")
         buildConfigField("boolean", "RELEASE_SIGNED", "false")

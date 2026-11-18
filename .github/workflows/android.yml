@@ -84,3 +84,6 @@ jobs:
             - Kanaldiagramm 2.4 / 5 / 6 GHz mit Interferenz-Score und Kanalempfehlung
             - Analyse der eigenen Verbindung und Sicherheitswarnungen
             - Auto-Scan (30 s) und Demo-Modus
+            - Versionsinfo unter ⋮ → Über die App
+
+            Änderungen: siehe [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.sha }}/CHANGELOG.md).
