@@ -83,7 +83,49 @@ cd android
 ./gradlew :core:test             # Analyse-Logik testen – funktioniert auch ohne Android SDK
 ```
 
-Alternativ den Ordner `android/` in Android Studio öffnen. Die so gebaute Release-APK ist mit dem Debug-Schlüssel signiert und für die direkte Installation gedacht.
+Alternativ den Ordner `android/` in Android Studio öffnen.
+
+### Release-Signing
+
+Die Release-APK wird mit einem eigenen Schlüssel signiert, sobald diese Umgebungsvariablen gesetzt sind; Keystore und Passwort gehören **nie** ins Repository (`*.keystore`, `*.jks` und `*.p12` sind in `.gitignore`).
+
+| Variable   | Bedeutung                                                    |
+|------------|--------------------------------------------------------------|
+| `KS_PASS`  | Keystore-Passwort (bei PKCS12 zugleich das Schlüssel-Passwort) |
+| `KS_FILE`  | Pfad zum Keystore (Standard: `android/release.keystore`)     |
+| `KS_ALIAS` | Schlüssel-Alias (Standard: `wlan-analyzer`)                  |
+
+Fehlt `KS_PASS` oder der Keystore, wird mit dem Debug-Schlüssel signiert und eine Warnung ausgegeben. Mit `-PrequireReleaseSigning=true` bricht der Build stattdessen ab.
+
+**Keystore einmalig erzeugen (Windows PowerShell):**
+
+```powershell
+$env:KS_PASS = Read-Host "Keystore-Passwort"   # oder auf eigenem Weg setzen
+keytool -genkeypair -v -keystore wlan-analyzer-release.keystore -storetype PKCS12 `
+  -alias wlan-analyzer -keyalg RSA -keysize 4096 -validity 10000 `
+  -storepass:env KS_PASS -dname "CN=WLAN-Analyzer"
+```
+
+`keytool` liegt jedem JDK bei, z. B. unter `C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe`. Keystore und Passwort sicher aufbewahren (Passwortmanager plus Backup): Geht der Schlüssel verloren, lassen sich installierte Apps nicht mehr aktualisieren.
+
+**Lokal signiert bauen (benötigt Android SDK):**
+
+```powershell
+cd android
+$env:KS_FILE = "C:\Pfad\zu\wlan-analyzer-release.keystore"
+.\gradlew.bat :app:assembleRelease -PrequireReleaseSigning=true
+# Ergebnis: android\app\build\outputs\apk\release\app-release.apk
+```
+
+**Signiert in GitHub Actions bauen:** Unter *Settings → Secrets and variables → Actions* zwei Repository-Secrets anlegen:
+
+- `KEYSTORE_BASE64` – Inhalt des Keystores als Base64:
+  `[Convert]::ToBase64String([IO.File]::ReadAllBytes("wlan-analyzer-release.keystore")) | Set-Clipboard`
+- `KS_PASS` – das Keystore-Passwort
+
+Danach signiert jeder Build mit diesem Schlüssel; Releases werden ohne die Secrets gar nicht erst gebaut. Der Schritt „Signatur prüfen“ zeigt den SHA-256-Fingerabdruck des Zertifikats im Log.
+
+> Version 0.1.0 wurde noch mit dem Debug-Schlüssel signiert. Vor der Installation einer mit dem neuen Schlüssel signierten Version muss die alte App einmal deinstalliert werden.
 
 ### Neues Release erstellen
 
@@ -107,7 +149,7 @@ Unter Linux benötigt `iw scan` root-Rechte; unter Windows 11 und aktuellem macO
 
 ## Fehler melden
 
-[Ein Issue erstellen](https://github.com/oskar1mobile/Wifi-Analyzer/issues) und möglichst folgende Angaben ergänzen:
+[Ein Issue erstellen](https://github.com/oskar1mobile/Wifi-Analyzer/issues) und möglichst folgende Angaben ergänzen. Version, Commit, Android-Version und Gerät lassen sich in der App über **⋮ → Über die App → Kopieren** in die Zwischenablage übernehmen:
 
 - App-Version, Gerätemodell und Android-Version.
 - Schritte zum Reproduzieren.

@@ -28,8 +28,30 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Release-Keystore aus Secret bereitstellen
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "KS_FILE=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+            echo "Release-Keystore gefunden."
+          else
+            echo "::warning::Secret KEYSTORE_BASE64 fehlt – APK wird mit dem Debug-Schlüssel signiert."
+          fi
+
       - name: Tests und APK bauen
-        run: ./gradlew --no-daemon :core:test :app:assembleRelease
+        env:
+          KS_PASS: ${{ secrets.KS_PASS }}
+          # Releases dürfen nie mit dem Debug-Schlüssel signiert werden
+          REQUIRE_SIGNING: ${{ startsWith(github.ref, 'refs/tags/v') || inputs.release }}
+        run: ./gradlew --no-daemon :core:test :app:assembleRelease -PrequireReleaseSigning=$REQUIRE_SIGNING
+
+      - name: Signatur prüfen
+        run: |
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          # Schlägt nur fehl, wenn die Signatur ungültig ist; gibt DN und Fingerabdrücke aus
+          "$APKSIGNER" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
 
       - name: APK umbenennen
         run: cp app/build/outputs/apk/release/app-release.apk WLAN-Analyzer.apk
@@ -62,3 +84,6 @@ jobs:
             - Kanaldiagramm 2.4 / 5 / 6 GHz mit Interferenz-Score und Kanalempfehlung
             - Analyse der eigenen Verbindung und Sicherheitswarnungen
             - Auto-Scan (30 s) und Demo-Modus
+            - Versionsinfo unter ⋮ → Über die App
+
+            Änderungen: siehe [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.sha }}/CHANGELOG.md).

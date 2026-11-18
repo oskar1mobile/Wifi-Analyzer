@@ -91,6 +91,9 @@ fun MainScreen(
 ) {
     var tab by rememberSaveable { mutableStateOf(Tab.NETWORKS) }
     var menuOpen by remember { mutableStateOf(false) }
+    var showAbout by rememberSaveable { mutableStateOf(false) }
+
+    if (showAbout) AboutDialog(onDismiss = { showAbout = false })
 
     Scaffold(
         topBar = {
@@ -133,6 +136,14 @@ fun MainScreen(
                                 text = { Text("Demo-Daten anzeigen") },
                                 onClick = {
                                     onDemo()
+                                    menuOpen = false
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Über die App") },
+                                leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) },
+                                onClick = {
+                                    showAbout = true
                                     menuOpen = false
                                 },
                             )
